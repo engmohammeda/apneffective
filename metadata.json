@@ -1,0 +1,6 @@
+{
+  "name": "APN Doctor",
+  "description": "Mobile Network Diagnostics & APN Manager",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
