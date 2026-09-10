@@ -30,6 +30,13 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
         permission = Manifest.permission.READ_PHONE_STATE
     )
 
+    LaunchedEffect(uiState.applyMessage) {
+        uiState.applyMessage?.let { msg ->
+            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
+            viewModel.clearMessage()
+        }
+    }
+
     LaunchedEffect(phoneStatePermissionState.status) {
         viewModel.onPermissionResult(phoneStatePermissionState.status.isGranted)
     }
@@ -85,7 +92,8 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
                             ApnResultCard(
                                 apn = uiState.recommendedApn,
                                 capability = uiState.capabilityResult,
-                                onOpenSettings = { ApnIntentUtils.openApnSettings(context) }
+                                onOpenSettings = { ApnIntentUtils.openApnSettings(context) },
+                                onApplyApn = { viewModel.applyApn() }
                             )
                         }
                     }
@@ -227,7 +235,7 @@ fun DiagnosisRow(checked: Boolean, text: String) {
 }
 
 @Composable
-fun ApnResultCard(apn: Apn?, capability: ApnWriteCapabilityResult?, onOpenSettings: () -> Unit) {
+fun ApnResultCard(apn: Apn?, capability: ApnWriteCapabilityResult?, onOpenSettings: () -> Unit, onApplyApn: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
@@ -243,13 +251,15 @@ fun ApnResultCard(apn: Apn?, capability: ApnWriteCapabilityResult?, onOpenSettin
                 
                 Spacer(Modifier.height(16.dp))
                 
-                if (capability?.capability == ApnWriteCapability.DIRECTLY_SUPPORTED) {
-                    Button(onClick = { /* Implement directly */ }, modifier = Modifier.fillMaxWidth()) {
-                        Text("تطبيق تلقائي")
-                    }
-                } else {
+                Button(onClick = onApplyApn, modifier = Modifier.fillMaxWidth()) {
+                    Text("إضافة APN تلقائياً للشريحة")
+                }
+                
+                Spacer(Modifier.height(8.dp))
+                
+                if (capability?.capability != ApnWriteCapability.DIRECTLY_SUPPORTED) {
                     Text(
-                        "التعديل التلقائي غير مدعوم على جهازك لدواعي أمنية من نظام الأندرويد. الرجاء إدخالها يدوياً.",
+                        "ملاحظة: التعديل التلقائي قد لا يكون مدعوماً على جهازك من قبل النظام، إن فشل الأمر يمكنك إدخال البيانات يدوياً عبر زر الإعدادات أدناه.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
@@ -257,7 +267,7 @@ fun ApnResultCard(apn: Apn?, capability: ApnWriteCapabilityResult?, onOpenSettin
                     OutlinedButton(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Default.Settings, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("فتح إعدادات APN")
+                        Text("فتح إعدادات APN يدوياً")
                     }
                 }
             } else {

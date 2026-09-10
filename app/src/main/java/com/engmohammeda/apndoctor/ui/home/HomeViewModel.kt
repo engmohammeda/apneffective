@@ -24,7 +24,8 @@ data class HomeUiState(
     val diagnosis: ApnDiagnosis? = null,
     val capabilityResult: ApnWriteCapabilityResult? = null,
     val isLoading: Boolean = false,
-    val hasPhoneStatePermission: Boolean = false
+    val hasPhoneStatePermission: Boolean = false,
+    val applyMessage: String? = null
 )
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
@@ -41,6 +42,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val telephonyManagerWrapper = TelephonyManagerWrapper(application)
     private val diagnoseApnUseCase = DiagnoseApnUseCase()
     private val checkApnWriteCapabilityUseCase = CheckApnWriteCapabilityUseCase(application)
+    private val insertApnUseCase = com.engmohammeda.apndoctor.domain.usecase.InsertApnUseCase(application)
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -61,6 +63,20 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun selectSim(simInfo: SimInfo) {
         _uiState.update { it.copy(selectedSim = simInfo) }
         diagnose()
+    }
+
+    fun applyApn() {
+        val sim = _uiState.value.selectedSim ?: return
+        val apn = _uiState.value.recommendedApn ?: return
+        
+        viewModelScope.launch {
+            val result = insertApnUseCase.invoke(apn, sim.subscriptionId)
+            _uiState.update { it.copy(applyMessage = result.getOrNull() ?: result.exceptionOrNull()?.message) }
+        }
+    }
+
+    fun clearMessage() {
+        _uiState.update { it.copy(applyMessage = null) }
     }
 
     fun scan() {
