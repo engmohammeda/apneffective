@@ -27,6 +27,11 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build Release APK
+        env:
+          KEYSTORE_PATH: ${{ github.workspace }}/keystore/apndoctor.jks
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
       - name: Get App Version
